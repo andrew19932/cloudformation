@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  DynamoDBTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: 'users'
+          AttributeType: 'S'
+      KeySchema:
+        - AttributeName: 'users'
+          KeyType: 'HASH'
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      TableName: Users
+  Function:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: index.lambda_handler
+      Runtime: python2.7
+      Code: 
+         ZipFile: !Sub |
+                    def lambda_handler(event, context):
+      Description: Test for the tasl
+      FunctionName: HelloWorldPyVarsByCF
+      Role: !GetAtt
+        - LambdaExecutionRole
+        - Arn
+      Timeout: '30'
+    DependsOn:
+      - LambdaExecutionRole
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  - 'arn:aws:logs:*:*:*'
+                Effect: Allow
+              - Action:
+                  - 'dynamodb:PutItem'
+                Resource: !GetAtt
+                  - DynamoDBTable
+                  - Arn
+                Effect: Allow
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
